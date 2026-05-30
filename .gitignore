@@ -1,0 +1,19 @@
+# Arduino build output
+build/
+*.bin
+*.elf
+*.map
+*.hex
+*.eep
+*.lst
+*.o
+*.d
+
+# Local IDE/cache
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Arduino CLI metadata/local board selection
+sketch.yaml
