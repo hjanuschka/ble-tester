@@ -69,8 +69,15 @@ static uint16_t currentPeerMTU() {
   return mtu < 23 ? 23 : mtu;
 }
 
+// NOTE: do NOT call this immediately after a notify*() helper. NimBLE
+// schedules the notification asynchronously; if setValue() runs first the
+// notification packet ends up carrying the new value (the status string)
+// instead of the binary chunk / metadata we just queued. Call this only
+// when the client did not enable notifications, or right before another
+// setValue+notify pair.
 static void updateReadValue() {
   if (!testerChar) return;
+  if (notifyEnabled) return; // notifications use setValue+notify themselves
   char status[128];
   snprintf(status, sizeof(status),
            "dino tester ready writes=%lu mtu=%u image=" IMG_TAG ":%lu",
@@ -197,7 +204,6 @@ class TesterCallbacks : public NimBLECharacteristicCallbacks {
     if (value.size() >= 5 && value.compare(0, 4, "get ") == 0) {
       uint16_t seq = (uint16_t)strtoul(value.c_str() + 4, nullptr, 10);
       sendChunk(seq);
-      updateReadValue();
       return;
     }
 
@@ -210,7 +216,6 @@ class TesterCallbacks : public NimBLECharacteristicCallbacks {
     if (msg == "lets go" || msg == "let's go" || msg == "go" || msg == "start" || msg == "image") {
       Serial.println("Image stream requested -- sending metadata; client should pull chunks with get <seq>");
       sendMetadata();
-      updateReadValue();
       return;
     }
 
@@ -220,13 +225,11 @@ class TesterCallbacks : public NimBLECharacteristicCallbacks {
                "dino tester: write arbitrary bytes for RX ack; write 'lets go' for image metadata; write 'get <seq>' for chunks; mtu=%u image=" IMG_TAG ":%lu\n",
                currentPeerMTU(), (unsigned long)IMG_LEN);
       notifyText(help);
-      updateReadValue();
       return;
     }
 
     // Default behavior: write-size tester ACK.
     sendWriteAck(len, firstByte, lastByte);
-    updateReadValue();
   }
 
   void onSubscribe(NimBLECharacteristic* c, NimBLEConnInfo& connInfo, uint16_t subValue) override {
