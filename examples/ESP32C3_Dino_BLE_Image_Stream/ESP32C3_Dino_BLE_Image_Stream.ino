@@ -115,7 +115,15 @@ static void streamImagePng() {
   streaming = true;
   streamRequested = false;
 
-  const uint16_t mtu = NimBLEDevice::getMTU();
+  // Use the actual negotiated MTU for the current connection, not the locally
+  // requested setMTU() value. NimBLEDevice::getMTU() returns the local request
+  // and can be wrong if the peer negotiated a smaller MTU.
+  uint16_t mtu = 23;
+  if (server && server->getConnectedCount() > 0) {
+    uint16_t connHandle = server->getPeerInfo(0).getConnHandle();
+    mtu = server->getPeerMTU(connHandle);
+  }
+  if (mtu < 23) mtu = 23;
   const uint16_t notifyPayloadMax = (mtu > 3) ? (mtu - 3) : 20;
   const uint16_t headerLen = 8;
   const uint16_t dataPerChunk = (notifyPayloadMax > headerLen) ? (notifyPayloadMax - headerLen) : 12;
@@ -142,7 +150,7 @@ static void streamImagePng() {
     notifyBytes(packet, headerLen + len);
     Serial.printf("chunk %u/%u offset=%lu len=%u\n", seq + 1, totalChunks, (unsigned long)offset, len);
     offset += len;
-    delay(15); // be gentle with browser/OS notification queues
+    delay(30); // be gentle with browser/OS notification queues
   }
 
   notifyText("DONE\n");
