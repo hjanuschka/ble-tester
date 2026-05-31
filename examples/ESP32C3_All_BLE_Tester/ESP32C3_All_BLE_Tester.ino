@@ -248,7 +248,9 @@ void setup() {
 
   NimBLEDevice::init(DEVICE_NAME);
   NimBLEDevice::setMTU(517);
-  NimBLEDevice::setPower(ESP_PWR_LVL_P9);
+  // Lower TX power to reduce current draw and chip temperature.
+  // P9 is maximum; P3 is plenty for nearby desktop testing.
+  NimBLEDevice::setPower(ESP_PWR_LVL_P3);
 
   server = NimBLEDevice::createServer();
   server->setCallbacks(new ServerCallbacks());
