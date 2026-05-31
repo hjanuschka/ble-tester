@@ -50,9 +50,6 @@ static bool connected = false;
 static bool notifyEnabled = false;
 static uint32_t writeSeq = 0;
 
-static const uint8_t LED_PINS[] = {2, 8, 10};
-static bool ledState = false;
-
 static void advertise() {
   NimBLEAdvertising* adv = NimBLEDevice::getAdvertising();
   adv->setName(DEVICE_NAME);
@@ -239,11 +236,6 @@ class TesterCallbacks : public NimBLECharacteristicCallbacks {
 };
 
 void setup() {
-  for (uint8_t pin : LED_PINS) {
-    pinMode(pin, OUTPUT);
-    digitalWrite(pin, LOW);
-  }
-
   Serial.begin(115200);
   delay(1500);
   Serial.println();
@@ -277,14 +269,7 @@ void setup() {
 }
 
 void loop() {
-  static uint32_t lastBlink = 0;
   static uint32_t lastLog = 0;
-
-  if (millis() - lastBlink > 250) {
-    lastBlink = millis();
-    ledState = !ledState;
-    for (uint8_t pin : LED_PINS) digitalWrite(pin, ledState ? HIGH : LOW);
-  }
 
   if (millis() - lastLog > 5000) {
     lastLog = millis();
