@@ -97,11 +97,18 @@ static uint16_t currentPeerMTU() {
   return mtu < 23 ? 23 : mtu;
 }
 
+// Web Bluetooth on Chromium effectively caps notification payloads around
+// the iOS/Android-default 244 bytes (ATT MTU 247) regardless of what the
+// link negotiates. Larger notifications get silently dropped, so we cap
+// the per-notification ATT value at 244 bytes here.
+static constexpr uint16_t WEB_BLUETOOTH_NOTIFY_CAP = 244;
+
 static uint16_t chunkDataSize() {
-  const uint16_t mtu = currentPeerMTU();
-  const uint16_t notifyPayloadMax = (mtu > 3) ? (mtu - 3) : 20;
+  uint16_t mtu = currentPeerMTU();
+  const uint16_t notifyPayloadMax =
+      min<uint16_t>(WEB_BLUETOOTH_NOTIFY_CAP, (mtu > 3) ? (uint16_t)(mtu - 3) : (uint16_t)20);
   const uint16_t headerLen = 8;
-  return (notifyPayloadMax > headerLen) ? (notifyPayloadMax - headerLen) : 12;
+  return (notifyPayloadMax > headerLen) ? (uint16_t)(notifyPayloadMax - headerLen) : (uint16_t)12;
 }
 
 static uint16_t totalChunkCount() {
