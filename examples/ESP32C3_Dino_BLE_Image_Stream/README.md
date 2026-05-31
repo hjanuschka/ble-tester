@@ -1,11 +1,17 @@
-# ESP32-C3 Dino BLE Image Streamer
+# ESP32-C3 BLE Image Streamer
 
-BLE peripheral that streams the Chrome Dino `offline-sprite-2x.png` over notifications after receiving a `lets go` write.
+BLE peripheral that streams a PNG image over notifications after receiving a `lets go` write.
+
+Current embedded image source:
+
+```text
+https://img.itch.zone/aW1nLzIyMTk3MzUucG5n/original/iVdKq2.png
+```
 
 Device name:
 
 ```text
-chromium dino streamer
+chromium image streamer
 ```
 
 Service UUID:
@@ -36,7 +42,7 @@ The device responds with notifications:
 1. ASCII metadata:
 
 ```text
-DINO PNG size=<bytes> mtu=<mtu> chunkData=<payloadBytes> chunks=<n>
+PNG size=<bytes> mtu=<mtu> chunkData=<payloadBytes> chunks=<n>
 ```
 
 2. Binary chunks. Each notification has an 8-byte little-endian header followed by PNG bytes:

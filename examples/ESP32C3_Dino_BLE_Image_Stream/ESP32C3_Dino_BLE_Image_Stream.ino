@@ -1,7 +1,7 @@
 /*
-  ESP32-C3 BLE Dino image streamer
+  ESP32-C3 BLE image streamer
 
-  Advertises as: chromium dino streamer
+  Advertises as: chromium image streamer
 
   Protocol:
     1. Web Bluetooth client connects to service FFE0 / characteristic FFE1.
@@ -22,7 +22,7 @@
 #include <NimBLEDevice.h>
 #include "dino_png.h"
 
-static const char* DEVICE_NAME = "chromium dino streamer";
+static const char* DEVICE_NAME = "chromium image streamer";
 static const char* SERVICE_UUID = "0000ffe0-0000-1000-8000-00805f9b34fb";
 static const char* CHAR_UUID    = "0000ffe1-0000-1000-8000-00805f9b34fb";
 
@@ -42,7 +42,7 @@ static void advertise() {
   adv->addServiceUUID(SERVICE_UUID);
   adv->enableScanResponse(true);
   adv->start();
-  Serial.println("Advertising as chromium dino streamer");
+  Serial.println("Advertising as chromium image streamer");
 }
 
 static void notifyBytes(const uint8_t* data, size_t len) {
@@ -110,7 +110,7 @@ class StreamCallbacks : public NimBLECharacteristicCallbacks {
   }
 };
 
-static void streamDinoPng() {
+static void streamImagePng() {
   if (!connected || !notifyEnabled || streaming) return;
   streaming = true;
   streamRequested = false;
@@ -122,7 +122,7 @@ static void streamDinoPng() {
   const uint16_t totalChunks = (DINO_PNG_LEN + dataPerChunk - 1) / dataPerChunk;
 
   char meta[128];
-  snprintf(meta, sizeof(meta), "DINO PNG size=%lu mtu=%u chunkData=%u chunks=%u\n",
+  snprintf(meta, sizeof(meta), "PNG size=%lu mtu=%u chunkData=%u chunks=%u\n",
            (unsigned long)DINO_PNG_LEN, mtu, dataPerChunk, totalChunks);
   Serial.print(meta);
   notifyText(meta);
@@ -160,7 +160,7 @@ void setup() {
   delay(1500);
   Serial.println();
   Serial.println("========================================");
-  Serial.println("ESP32-C3 BLE Dino image streamer BOOT");
+  Serial.println("ESP32-C3 BLE image streamer BOOT");
   Serial.printf("BLE name: %s\n", DEVICE_NAME);
   Serial.printf("PNG bytes embedded: %lu\n", (unsigned long)DINO_PNG_LEN);
   Serial.println("Write 'lets go' after enabling notifications.");
@@ -198,7 +198,7 @@ void loop() {
     for (uint8_t pin : LED_PINS) digitalWrite(pin, ledState ? HIGH : LOW);
   }
 
-  if (streamRequested) streamDinoPng();
+  if (streamRequested) streamImagePng();
 
   if (millis() - lastLog > 2000) {
     lastLog = millis();
