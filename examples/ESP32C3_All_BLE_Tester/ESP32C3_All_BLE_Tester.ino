@@ -54,13 +54,23 @@ static uint32_t writeSeq = 0;
 // not an external header pin. The esp32c3 Arduino variant maps RGB_BUILTIN
 // to the onboard WS2812/SK6812 data line.
 static constexpr uint8_t STATUS_RGB_LED_PIN = RGB_BUILTIN;
+static constexpr uint8_t STATUS_RGB_LED_BRIGHTNESS = 64;
 
-static void setStatusLed(bool isConnected) {
-  if (isConnected) {
-    rgbLedWrite(STATUS_RGB_LED_PIN, 0, 0, 24);   // blue = connected
-  } else {
-    rgbLedWrite(STATUS_RGB_LED_PIN, 24, 0, 0);   // red = advertising / idle
-  }
+static void setStatusLedColor(uint8_t red, uint8_t green, uint8_t blue) {
+  // RGB_BUILTIN is the Arduino board definition for the onboard addressable LED.
+  rgbLedWrite(STATUS_RGB_LED_PIN, red, green, blue);
+}
+
+static void setStatusLedBoot() {
+  setStatusLedColor(STATUS_RGB_LED_BRIGHTNESS, STATUS_RGB_LED_BRIGHTNESS / 3, 0); // orange = booting
+}
+
+static void setStatusLedIdle() {
+  setStatusLedColor(STATUS_RGB_LED_BRIGHTNESS, 0, 0); // red = advertising / idle
+}
+
+static void setStatusLedConnected() {
+  setStatusLedColor(0, 0, STATUS_RGB_LED_BRIGHTNESS); // blue = connected / paired
 }
 
 static void advertise() {
@@ -180,7 +190,7 @@ class ServerCallbacks : public NimBLEServerCallbacks {
   void onConnect(NimBLEServer* s, NimBLEConnInfo& connInfo) override {
     connected = true;
     writeSeq = 0;
-    setStatusLed(true);
+    setStatusLedConnected();
     Serial.printf("Connected: %s requestedMTU=%u peerMTU=%u\n",
                   connInfo.getAddress().toString().c_str(),
                   NimBLEDevice::getMTU(), currentPeerMTU());
@@ -190,7 +200,7 @@ class ServerCallbacks : public NimBLEServerCallbacks {
   void onDisconnect(NimBLEServer* s, NimBLEConnInfo& connInfo, int reason) override {
     connected = false;
     notifyEnabled = false;
-    setStatusLed(false);
+    setStatusLedIdle();
     Serial.printf("Disconnected reason=%d\n", reason);
     advertise();
   }
@@ -251,7 +261,7 @@ class TesterCallbacks : public NimBLECharacteristicCallbacks {
 };
 
 void setup() {
-  setStatusLed(false);
+  setStatusLedBoot();
 
   Serial.begin(115200);
   delay(1500);
@@ -284,6 +294,7 @@ void setup() {
   testerChar->setValue("dino tester ready");
 
   service->start();
+  setStatusLedIdle();
   advertise();
 }
 
