@@ -4,6 +4,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "examples" / "ESP32C3_All_BLE_Tester"
+REF = Path(__file__).resolve().parent / "dino_reference.png"
 JPG = OUT / "dino.jpg"
 HDR = OUT / "dino_jpg.h"
 
@@ -11,35 +12,37 @@ W, H = 640, 420
 img = Image.new("RGB", (W, H), "black")
 p = img.load()
 
-# Vivid radial + horizontal gradient so early progressive scans show a full-frame preview.
+# Strong full-frame gradient. Progressive JPEG first scans make this visible early.
 for y in range(H):
     for x in range(W):
         nx = x / (W - 1)
         ny = y / (H - 1)
-        r1 = math.hypot(nx - 0.22, ny - 0.30)
-        r2 = math.hypot(nx - 0.78, ny - 0.70)
-        red = int(255 * max(0, 1 - 1.45 * r1)) + int(80 * nx)
-        green = int(200 * max(0, 1 - 1.2 * r2)) + int(60 * (1 - ny))
-        blue = int(240 * (0.25 + 0.75 * nx) * (0.35 + 0.65 * (1 - ny)))
-        p[x, y] = (min(255, red), min(255, green), min(255, blue))
+        wave = 0.5 + 0.5 * math.sin(nx * 10.0 + ny * 5.0)
+        red = int(35 + 210 * max(0, 1 - 1.35 * math.hypot(nx - 0.18, ny - 0.28)))
+        green = int(30 + 180 * max(0, 1 - 1.15 * math.hypot(nx - 0.78, ny - 0.72)))
+        blue = int(55 + 170 * (0.30 + 0.70 * nx) * (0.45 + 0.55 * (1 - ny)))
+        p[x, y] = (min(255, red + int(22 * wave)), min(255, green + int(18 * (1 - wave))), min(255, blue))
 
 d = ImageDraw.Draw(img)
 
-# Chunk grid / scan markers: visible only after higher-frequency scans refine.
-for x in range(0, W, 40):
+# Fine detail grid and diagonals to show progressive sharpening.
+for x in range(0, W, 32):
     d.line([(x, 0), (x, H)], fill=(255, 255, 255), width=1)
-for y in range(0, H, 40):
+for y in range(0, H, 32):
     d.line([(0, y), (W, y)], fill=(0, 0, 0), width=1)
+for off in range(-H, W, 42):
+    d.line([(off, H), (off + H, 0)], fill=(255, 193, 7), width=1)
 
-# Semi-transparent panels.
+# Panels.
 overlay = Image.new("RGBA", (W, H), (0, 0, 0, 0))
 od = ImageDraw.Draw(overlay)
-od.rounded_rectangle((24, 22, W - 24, 118), radius=18, fill=(0, 0, 0, 155), outline=(255, 193, 7, 255), width=3)
-od.rounded_rectangle((24, H - 92, W - 24, H - 22), radius=16, fill=(0, 0, 0, 140), outline=(255, 255, 255, 170), width=2)
+od.rounded_rectangle((24, 20, W - 24, 116), radius=18, fill=(0, 0, 0, 165), outline=(255, 193, 7, 255), width=3)
+od.rounded_rectangle((24, H - 92, W - 24, H - 22), radius=16, fill=(0, 0, 0, 150), outline=(255, 255, 255, 180), width=2)
+od.rounded_rectangle((32, 132, 210, 344), radius=14, fill=(0, 0, 0, 95), outline=(255, 255, 255, 150), width=2)
 img = Image.alpha_composite(img.convert("RGBA"), overlay).convert("RGB")
 d = ImageDraw.Draw(img)
 
-# Fonts with fallback.
+# Fonts.
 def font(size, bold=False):
     candidates = [
         "C:/Windows/Fonts/consolab.ttf" if bold else "C:/Windows/Fonts/consola.ttf",
@@ -57,54 +60,59 @@ f_mid = font(24, True)
 f_small = font(16, False)
 f_num = font(18, True)
 
-# Clear title/text for progressive sharpening.
-d.text((44, 32), "BLE PROGRESSIVE JPEG", font=f_big, fill=(255, 193, 7), stroke_width=2, stroke_fill=(0, 0, 0))
-d.text((48, 84), "full image appears blurry first - details sharpen chunk by chunk", font=f_small, fill=(235, 235, 235))
+# Text stays crisp in later progressive scans.
+d.text((44, 30), "BLE PROGRESSIVE JPEG", font=f_big, fill=(255, 193, 7), stroke_width=2, stroke_fill=(0, 0, 0))
+d.text((48, 84), "first: blurry full image  ->  later: sharp dino, text, and grid", font=f_small, fill=(235, 235, 235))
 
-# Draw a friendly Chrome-Dino-like silhouette with strong edges.
-# Body and tail.
-d.rounded_rectangle((235, 178, 438, 282), radius=26, fill=(245, 245, 245), outline=(20, 20, 20), width=5)
-d.polygon([(237, 235), (135, 204), (234, 260)], fill=(245, 245, 245), outline=(20, 20, 20))
-d.line([(237, 235), (135, 204), (234, 260)], fill=(20, 20, 20), width=5)
-# Neck/head.
-d.rounded_rectangle((378, 128, 505, 205), radius=18, fill=(245, 245, 245), outline=(20, 20, 20), width=5)
-d.rectangle((451, 176, 534, 204), fill=(245, 245, 245), outline=(20, 20, 20), width=5)
-# Eye/mouth.
-d.ellipse((468, 148, 482, 162), fill=(0, 0, 0))
-d.line((488, 185, 526, 185), fill=(20, 20, 20), width=4)
-# Legs.
-d.rounded_rectangle((273, 270, 310, 345), radius=10, fill=(245, 245, 245), outline=(20, 20, 20), width=5)
-d.rounded_rectangle((374, 270, 413, 345), radius=10, fill=(245, 245, 245), outline=(20, 20, 20), width=5)
-d.rectangle((265, 334, 326, 355), fill=(245, 245, 245), outline=(20, 20, 20), width=5)
-d.rectangle((366, 334, 428, 355), fill=(245, 245, 245), outline=(20, 20, 20), width=5)
-# Arm.
-d.line((397, 224, 450, 247), fill=(20, 20, 20), width=10)
-d.line((397, 224, 448, 245), fill=(245, 245, 245), width=5)
+# Use the requested Chrome Dino image. White background is made transparent;
+# the dino itself is kept as the original grey pixel art.
+ref = Image.open(REF).convert("RGBA")
+# Crop away the thumbnail border, then mask non-white pixels.
+ref = ref.crop((25, 20, 197, 205))
+scale_h = 230
+scale_w = int(ref.width * scale_h / ref.height)
+ref = ref.resize((scale_w, scale_h), Image.Resampling.NEAREST)
+mask = Image.new("L", ref.size, 0)
+mp = mask.load()
+rp = ref.load()
+for y in range(ref.height):
+    for x in range(ref.width):
+        r, g, b, a = rp[x, y]
+        # Include dark/grey pixels, exclude white thumbnail background.
+        lum = (r + g + b) // 3
+        mp[x, y] = 255 if lum < 235 else 0
+# Slight outline/shadow behind the exact dino for contrast.
+dino_x = 300
+# center the dino in the main visual area.
+dino_x = (W - scale_w) // 2 + 55
+dino_y = 126
+shadow = Image.new("RGBA", ref.size, (0, 0, 0, 190))
+img.paste(shadow, (dino_x + 5, dino_y + 7), mask.filter(ImageFilter.MaxFilter(5)))
+img.paste(ref, (dino_x, dino_y), mask)
+d = ImageDraw.Draw(img)
 
-# Fine details: QR-like checker and labels to make progressive refinement obvious.
-for y in range(150, 330, 12):
-    for x in range(42, 174, 12):
-        if ((x // 12) + (y // 12)) % 2 == 0:
-            d.rectangle((x, y, x + 8, y + 8), fill=(255, 255, 255))
-        else:
-            d.rectangle((x, y, x + 8, y + 8), fill=(0, 0, 0))
-d.text((42, 128), "fine detail", font=f_small, fill=(255, 255, 255), stroke_width=1, stroke_fill=(0,0,0))
+# Fine detail block: should be unreadable/soft early and crisp later.
+d.text((48, 142), "fine detail", font=f_small, fill=(255, 255, 255), stroke_width=1, stroke_fill=(0, 0, 0))
+for y in range(168, 326, 12):
+    for x in range(48, 194, 12):
+        fill = (255, 255, 255) if ((x // 12) + (y // 12)) % 2 == 0 else (0, 0, 0)
+        d.rectangle((x, y, x + 8, y + 8), fill=fill)
+
+# Labels around dino.
+d.text((380, 132), "REAL CHROME DINO", font=f_mid, fill=(255, 255, 255), stroke_width=2, stroke_fill=(0, 0, 0))
+d.text((382, 162), "progressive scans refine edges", font=f_small, fill=(255, 255, 255), stroke_width=1, stroke_fill=(0, 0, 0))
 
 # Bottom chunk strip.
 d.text((44, H - 80), "BLE pull mode: lets go -> IMG metadata -> get 0, get 1, get 2 ...", font=f_mid, fill=(255, 255, 255), stroke_width=1, stroke_fill=(0, 0, 0))
 for i in range(16):
     x0 = 48 + i * 34
     color = (255, 193, 7) if i % 2 == 0 else (106, 191, 105)
-    d.rounded_rectangle((x0, H - 46, x0 + 26, H - 26), radius=5, fill=color, outline=(0,0,0), width=2)
+    d.rounded_rectangle((x0, H - 46, x0 + 26, H - 26), radius=5, fill=color, outline=(0, 0, 0), width=2)
     d.text((x0 + 5, H - 45), str(i), font=f_num, fill=(0, 0, 0))
 
-# Add subtle sharpened copy for crisp edges.
-img = img.filter(ImageFilter.UnsharpMask(radius=1.2, percent=140, threshold=2))
-
-# Save as progressive JPEG. Optimize keeps it small enough for ESP32 flash but detailed.
+img = img.filter(ImageFilter.UnsharpMask(radius=1.0, percent=120, threshold=2))
 img.save(JPG, "JPEG", quality=78, optimize=True, progressive=True)
 
-# Emit Arduino header.
 data = JPG.read_bytes()
 lines = [
     "#pragma once",
@@ -116,7 +124,7 @@ lines = [
     "static const uint8_t DINO_JPG[] PROGMEM = {",
 ]
 for i in range(0, len(data), 12):
-    chunk = data[i:i+12]
+    chunk = data[i:i + 12]
     suffix = "," if i + 12 < len(data) else ""
     lines.append("  " + ", ".join(f"0x{b:02X}" for b in chunk) + suffix)
 lines.append("};")
