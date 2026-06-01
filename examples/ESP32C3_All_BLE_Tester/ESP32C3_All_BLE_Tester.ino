@@ -16,7 +16,11 @@
     2. Write-size confirmation tester:
        - works with writes.html style tests that need peripheral-side truth
 
-    3. Dino/image streaming tester:
+    3. getNegotiatedMTU() probe:
+       - write: mtu
+       - reply: "MTU peerMTU=<peerMTU>\n" (dedicated for mtu.html conformance test)
+
+    4. Dino/image streaming tester:
        - enable notifications
        - write: lets go
        - receive metadata notification

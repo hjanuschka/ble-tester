@@ -32,6 +32,22 @@ If notifications are enabled, the device replies:
 RX seq=<n> len=<bytes> first=0xXX last=0xXX mtu=<peerMTU>
 ```
 
+### getNegotiatedMTU probe
+
+Write the ASCII command:
+
+```text
+mtu
+```
+
+The device replies with one notification:
+
+```text
+MTU peerMTU=<peerMTU>
+```
+
+Used by the `mtu.html` conformance test on the sampler page to cross-check the browser-side `getNegotiatedMTU()` return value against the peripheral-side `NimBLEServer::getPeerMTU()`.
+
 ### Image streamer
 
 1. Enable notifications.
