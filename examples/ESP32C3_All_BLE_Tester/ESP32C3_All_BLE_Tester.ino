@@ -50,9 +50,10 @@ static bool connected = false;
 static bool notifyEnabled = false;
 static uint32_t writeSeq = 0;
 
-// Most ESP32-C3 Mini boards with an onboard RGB LED use a WS2812/SK6812 on GPIO8.
-// This is only a data signal to the LED, not direct GPIO driving of random pins.
-static constexpr uint8_t STATUS_RGB_LED_PIN = 8;
+// Onboard ESP32-C3 RGB LED. This is the board's built-in LED mapping,
+// not an external header pin. The esp32c3 Arduino variant maps RGB_BUILTIN
+// to the onboard WS2812/SK6812 data line.
+static constexpr uint8_t STATUS_RGB_LED_PIN = RGB_BUILTIN;
 
 static void setStatusLed(bool isConnected) {
   if (isConnected) {
