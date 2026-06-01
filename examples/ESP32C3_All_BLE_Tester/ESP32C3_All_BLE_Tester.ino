@@ -50,6 +50,18 @@ static bool connected = false;
 static bool notifyEnabled = false;
 static uint32_t writeSeq = 0;
 
+// Most ESP32-C3 Mini boards with an onboard RGB LED use a WS2812/SK6812 on GPIO8.
+// This is only a data signal to the LED, not direct GPIO driving of random pins.
+static constexpr uint8_t STATUS_RGB_LED_PIN = 8;
+
+static void setStatusLed(bool isConnected) {
+  if (isConnected) {
+    rgbLedWrite(STATUS_RGB_LED_PIN, 0, 0, 24);   // blue = connected
+  } else {
+    rgbLedWrite(STATUS_RGB_LED_PIN, 24, 0, 0);   // red = advertising / idle
+  }
+}
+
 static void advertise() {
   NimBLEAdvertising* adv = NimBLEDevice::getAdvertising();
   adv->setName(DEVICE_NAME);
@@ -167,6 +179,7 @@ class ServerCallbacks : public NimBLEServerCallbacks {
   void onConnect(NimBLEServer* s, NimBLEConnInfo& connInfo) override {
     connected = true;
     writeSeq = 0;
+    setStatusLed(true);
     Serial.printf("Connected: %s requestedMTU=%u peerMTU=%u\n",
                   connInfo.getAddress().toString().c_str(),
                   NimBLEDevice::getMTU(), currentPeerMTU());
@@ -176,6 +189,7 @@ class ServerCallbacks : public NimBLEServerCallbacks {
   void onDisconnect(NimBLEServer* s, NimBLEConnInfo& connInfo, int reason) override {
     connected = false;
     notifyEnabled = false;
+    setStatusLed(false);
     Serial.printf("Disconnected reason=%d\n", reason);
     advertise();
   }
@@ -236,6 +250,8 @@ class TesterCallbacks : public NimBLECharacteristicCallbacks {
 };
 
 void setup() {
+  setStatusLed(false);
+
   Serial.begin(115200);
   delay(1500);
   Serial.println();
