@@ -50,10 +50,10 @@ static bool connected = false;
 static bool notifyEnabled = false;
 static uint32_t writeSeq = 0;
 
-// Onboard ESP32-C3 RGB LED. This is the board's built-in LED mapping,
-// not an external header pin. The esp32c3 Arduino variant maps RGB_BUILTIN
-// to the onboard WS2812/SK6812 data line.
-static constexpr uint8_t STATUS_RGB_LED_PIN = RGB_BUILTIN;
+// Onboard ESP32-C3 RGB LED for this board is on GPIO10.
+// Found with ESP32C3_LED_Finder. This is the onboard LED data line,
+// not an external LED/header connection.
+static constexpr uint8_t STATUS_RGB_LED_PIN = 10;
 static constexpr uint8_t STATUS_RGB_LED_BRIGHTNESS = 64;
 
 static void setStatusLedColor(uint8_t red, uint8_t green, uint8_t blue) {
